@@ -1,0 +1,73 @@
+version: '3'
+services:
+  # 容器名
+ mysql_db:
+     container_name: mysql_db
+      # 镜像
+     image: docker.io/mysql:5.7
+      # 获取root权限
+     privileged: true
+      restart: always
+      # 环境变量（自行设置密码）
+     environment:
+      - MYSQL_DATABASE=FasterRunner
+      - MYSQL_ROOT_PASSWORD=password
+      # 目录共享,格式 宿主机目录:容器目录
+     volumes:
+      - /var/lib/mysql:/var/lib/mysql
+      # 端口映射,格式 宿主机端口:容器端口
+     ports:
+      - 3306:3306
+      # 容器开机启动命令
+     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci  --socket=/var/lib/mysql/mysql.sock
+
+ fasterunner:
+     build: ./FasterRunner
+     container_name: fasterunner
+     image: fasterunner:latest
+      restart: always
+      # 依赖
+     depends_on:
+      - mysql_db
+     privileged: true
+      # 共享目录到容器,每次启动容器会copy宿主机代码
+     volumes:
+      - ./FasterRunner:/opt/workspace/FasterRunner/
+     network_mode: host
+     ports:
+      - 8000:8000
+     command: /bin/sh -c 'python3 manage.py runserver 0.0.0.0:8000'
+
+ fasterweb:
+     build: ./FasterWeb
+     container_name: fasterweb
+     image: fasterweb:latest
+      restart: always
+      # 依赖
+     privileged: true
+      # 共享目录到容器,每次启动容器会copy宿主机代码
+     volumes:
+      - ./FasterWeb/dist/:/static/
+      - ./FasterWeb/conf.d/:/etc/nginx/conf.d/
+     ports:
+      - 8082:8082
+
+
+ rabbitmq:
+      # 镜像
+     image: docker.io/rabbitmq:3.6.15-management-alpine
+     container_name: rabbitmq
+      # 环境变量（自行设置密码）
+     environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+      restart: always
+      # 端口映射,格式 宿主机端口:容器端口
+     ports:
+      - "15672:15672"
+      - "5672:5672"
+     logging:
+         driver: "json-file"
+         options:
+             max-size: "200k"
+             max-file: "10"
