@@ -15,6 +15,8 @@ services:
       # 目录共享,格式 宿主机目录:容器目录
      volumes:
       - /var/lib/mysql:/var/lib/mysql
+      - ./mysql/config/my.cnf:/etc/my.cnf
+      - ./mysql/init:/docker-entrypoint-initdb.d/
       # 端口映射,格式 宿主机端口:容器端口
      ports:
       - 3306:3306
